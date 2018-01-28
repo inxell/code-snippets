@@ -80,7 +80,7 @@ public:
 private:
     vector<int> arr;
     vector<int> data;
-    int capacity;
+    int capacity = 0;
 
 };
 
