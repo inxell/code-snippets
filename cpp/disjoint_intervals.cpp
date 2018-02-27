@@ -1,61 +1,67 @@
-using namespace std;
-typedef set<pair<int, int>>::iterator iiter;
 
-class Intervals {
+class RangeModule {
 public:
-    void add(const pair<int, int> & p){
-        /// add interval p into member pset and merge overlapping intervals.
-        if(p.first > p.second){
-            throw runtime_error("Invalid Interval!");
+    set<pair<int, int>> intervals;
+
+    void print(){
+        for(auto p : intervals){
+            cout << '[' << p.first << ',' << p.second << ']' << ',';
         }
-        auto piter = equalrange(p);
-        if(piter.first != piter.second){
-            int b = min(piter.first->first, p.first);
-            int e = max((--piter.second)->second, p.second);
-            pset.erase(piter.first, ++piter.second);
-            pset.insert({b, e});
-        }
-        else{
-            pset.insert(p);
-        }
-        return;
     }
 
-    vector<pair<int, int>> intersect(const pair<int, int>& p) const{
-        /// return intersection of p with intervals in pset.
-        /// only intervals with posive width are returned.
-        if(p.first > p.second){
-            throw runtime_error("Invalid Interval!");
-        }
-        auto piter = equalrange(p);
-        vector<pair<int,int>> res;
-        for(auto iter = piter.first; iter != piter.second; ++iter){
-            int b = max(p.first, iter->first);
-            int e = min(p.second, iter->second);
-            if(b < e) {
-                res.push_back({b, e});
-            }
-        }
-        return res;
-    };
 
-
-private:
-    set<pair<int, int>> pset;
-    pair<iiter, iiter> equalrange(const pair<int, int>& p) const{
-        ''' 
-        return a pair of iterators of pset,  (lit, rit), such that for any it within 
-        [lit, rit), the interval *it intersets with p.
-        '''
-        auto lit = pset.lower_bound({p.first, p.first});
-        auto rit = pset.lower_bound({p.second, p.second});
-        if(lit != pset.begin() && (--lit)->second < p.first){
-            ++lit;
+    void addRange(int left, int right) {
+        if(intervals.empty() || intervals.begin()->first > right || intervals.rbegin()->second < left){
+            intervals.insert({left, right});
+            return;
         }
-        if(rit != pset.end() && rit->first == p.second){
-            ++rit;
+        auto lit = intervals.upper_bound({left, left});
+        auto rit = intervals.upper_bound({right, INT_MAX});
+        // rit != intervals.begin() due to first if statement.
+        right = max(prev(rit)->second, right);
+        if(lit != intervals.begin() && prev(lit)->second >= left){
+            --lit;
         }
-        return make_pair(lit, rit);
+        left = min(left, lit->first);
+        intervals.erase(lit, rit);
+        intervals.insert({left, right});
     }
 
+    bool queryRange(int left, int right) {
+        auto it = intervals.lower_bound({left, right});
+        if(it != intervals.end() && it->first == left) return true;
+        if(it == intervals.begin()) return false;
+        --it;
+        return it->first <= left && it->second >= right;
+
+    }
+
+    void removeRange(int left, int right) {
+        if(intervals.empty() || intervals.begin()->first >= right || intervals.rbegin()->second <= left){
+            return;
+        }
+        auto lit = intervals.upper_bound({left, left});
+        auto rit = intervals.upper_bound({right, right});
+        int l = left, r = right;
+        if(lit != intervals.begin() && prev(lit)->second > left){
+            --lit;
+        }
+        if(lit->first < left){
+            l = lit->first;
+        }
+        r = max(right, prev(rit)->second);
+        intervals.erase(lit, rit);
+        if(l != left) intervals.insert({l, left});
+        if(r != right) intervals.insert({right, r});
+
+
+    }
 };
+
+/**
+ * Your RangeModule object will be instantiated and called as such:
+ * RangeModule obj = new RangeModule();
+ * obj.addRange(left,right);
+ * bool param_2 = obj.queryRange(left,right);
+ * obj.removeRange(left,right);
+ */
